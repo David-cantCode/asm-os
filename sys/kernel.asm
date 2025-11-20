@@ -1,10 +1,11 @@
 
 [BITS 32]
 
+section .text
+
+
 global _start 
 
-
-section .text
 
 _start:
     mov edi, 0xB8000 ;vga buff
@@ -18,8 +19,27 @@ _start:
 
 
 .done:
+    call print_hi
 
-    mov 
+    jmp $
 
 
-    jmp .done
+
+
+
+
+print_hi:
+    mov edi, 0xB8000
+
+    mov al, 'H'
+    mov ah, 0x07
+    mov [edi], ax
+
+
+    add edi, 2
+    mov al, 'I'
+    mov ah, 0x07
+    mov [edi], ax
+
+    ret
+
