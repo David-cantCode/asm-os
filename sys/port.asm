@@ -3,23 +3,18 @@
 
 section .text
 
-
+global inb
 inb:
 
-
-    xor edi, edi
-    in  al, dx          
-    mov edi, al   
-
+    mov dx, [esp+4]
+    in  al, dx
+    movzx eax, al
     ret
 
 
-outb: 
-
-    mov dx, di ;port 
-    mov al. sil  ;value
-
+global outb
+outb:
+    mov dx, [esp+4]
+    mov al, [esp+8]
     out dx, al
-    
-
     ret

@@ -1,0 +1,16 @@
+
+
+call inb:
+
+
+    push port  ;ex:: 0x60
+    call inb         
+    add esp, 4 ;clean args nessary when pushing to stack
+
+
+
+call outb:
+
+mov edi, port   
+mov esi, value   
+call outb
