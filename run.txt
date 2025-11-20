@@ -1,0 +1,6 @@
+cd Documents/GitHub/asm-os/
+
+qemu-system-i386 -hda bin/davidos.iso -m 4G
+
+
+vncviewer localhost:5900
