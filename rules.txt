@@ -1,0 +1,12 @@
+
+;arg1 edi 
+;arg2 esi 
+;arg3 edx
+
+
+;ret: eax
+
+
+
+helper labels
+    - start with a period

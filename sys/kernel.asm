@@ -24,10 +24,6 @@ _start:
     jmp $
 
 
-
-
-
-
 print_hi:
     mov edi, 0xB8000
 

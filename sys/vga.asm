@@ -1,11 +1,4 @@
 
-; ARGS
-; edi 
-; esi 
-; edx
-
-
-
 section .text 
 
 %define max_cols 45
@@ -26,12 +19,12 @@ control_row db 0
 
 
 control_line:
-    ;1 arg, row
+    ;1 arg, row edi
 
     mov control_row, edi
 
 set_cursor:
-    ;1 arg offset
+    ;1 arg offset edi
 
 
     ;div offset 2
@@ -94,21 +87,21 @@ get_cursor:
 
 
 
-get_offset:
-    ;2 args col, row
 
-    mov eax, [esp+8] ;row
-    imul eax, max_cols
-    add eax, [esp+4] ;+= col
-    shl eax, 1
+get_offset:
+    ;arg1 col edi
+    ;arg2 row esi
+
+    mov eax, esi          
+    imul eax, max_cols    
+    add eax, edi          
+    shl eax, 1           
     ret
 
 
-
 set_char:
-    ;2 args
-    ;store char in al
-    ;store offset in edi
+    ;arg1 offset edi
+    ;arg2 char al
 
     mov ebx, vga_addr
     add ebx, edi ;move to offset 
@@ -117,15 +110,79 @@ set_char:
 
 
 scroll_screen:
-    ;1 arg mem_offset
+    ;arg1 mem_offset edi
+    ;ret memory_offset - 2*MAX_COLS eax
 
+    mov ebx, edi
+
+
+    ;memcpy src
+
+    mov edi, 0            
+    ;row = cntrol_rol ++
+    mov esi, [control_row]
+    inc esi               
+    call get_offset       
+    add eax, vga_addr
+    mov ebp, eax       
+    
+
+    ;memcpy dest
+
+    mov edi, 0
+    mov esi, [control_row]
+    call get_offset        
+    add eax, vga_addr
+    mov edi, eax         
+
+    ;memcpy #bytes
+    mov ecx, max_rows
+    sub ecx, [control_row]
+    dec ecx             
+    imul ecx, max_cols       
+    shl ecx, 1                 
+
+  
+    mov esi, edi               
+    mov edi, ebp  
+    mov edx, ecx              
+    call memory_copy
+
+
+    ;clear last row
+    mov ecx, 0 
+
+
+.clear_last:
+    cmp ecx, max_cols
+    jge .clear_fin
+
+
+    mov edi, ecx                
+    mov esi, max_rows-1        
+    call get_offset          
+
+    mov al, ' '                 
+    mov edi, eax                 
+    call set_char_at_video_memory
+
+    inc ecx
+    jmp .clear_last
+
+
+.clear_fin:
+
+    mov eax, ebx                 
+    sub eax, 2*max_cols
+    ret
 
 
 print:
-    ;1 arg str
-
+    ;arg1 str
+    call get_cursor
+    mov edi, eax 
     
+    xor ecx, ecx
 
+.print_loop:
 
-
-clear_screen:
