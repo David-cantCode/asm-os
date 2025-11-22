@@ -27,41 +27,37 @@ extern inb
 
 
 set_cursor:
-    ;1 arg offset edi
-
+    ;arg1 offset in edi
     pusha
 
     ;div offset 2
-    shr edi, 1
     mov ebx, edi
+    shr ebx, 1 
 
-
-    mov edi, vga_index_reg    
+    ;set high    
+    mov edx, vga_index_reg  
     mov al, vga_off_high        
     call outb
 
-
-    mov edi, vga_data_reg       
-    mov al, bh ;high byte off
+    mov edx, vga_data_reg    
+    mov al, bh              
     call outb
 
-
-    mov edi, vga_index_reg
+    ;set low
+    mov edx, vga_index_reg 
     mov al, vga_off_low         
     call outb
-
   
-    mov edi, vga_data_reg
-    mov al, bl ;low byte off
+    mov edx, vga_data_reg    
+    mov al, bl  
     call outb
 
     popa
     ret
 
 
-
 get_cursor: 
-    ; ret: eax (offset in bytes)
+    ;ret: eax offset
     
 
     push edx
@@ -95,12 +91,12 @@ get_cursor:
 get_offset:
     ;arg1 col edi
     ;arg2 row esi
-    pusha 
+  
     mov eax, esi          
     imul eax, max_cols    
     add eax, edi          
     shl eax, 1           
-    popa
+
     ret
 
 global set_char
@@ -190,50 +186,42 @@ scroll_screen:
 global printf
 printf:
     ;arg1 str
+
+    pusha 
     call get_cursor
     mov edi, eax 
     
     xor ecx, ecx
 
 .print_loop:
-
-    mov al, [esi + ecx]
+    mov al, [esi + ecx] 
     cmp al, 0
-    je .print_done  
+    je .print_done
 
 
-    mov eax, edi
-    cmp eax, max_rows * max_cols * 2
-    jb .not_scroll
+    cmp al, 10 ; '\n'
+    je .handle_newline
 
 
-    mov edi, eax
+    call set_char
+    add edi, 2
+    
+    cmp edi, max_rows * max_cols * 2
+    jb .next_char
+    
     call scroll_screen
     mov edi, eax
-
-
-.not_scroll:
-    cmp al, 10 ;'\n'
-    jne .print_char
-
-    mov eax, edi
-    mov ebx, 2 * max_cols
-    xor edx, edx
-    div ebx                  
-    inc eax                    
-    mov edi, 0               
-    mov esi, eax              
-    call get_offset           
-
-    mov edi, eax              
     jmp .next_char
 
-
-
-.print_char:
-    call set_char
-    add edi, 2 ;mem_offset += 2
-
+.handle_newline:
+    mov eax, edi
+    mov ebx, max_cols * 2
+    xor edx, edx
+    div ebx            
+    
+    inc eax             
+    mul ebx             
+    mov edi, eax        
 
 .next_char:
     inc ecx              
@@ -241,4 +229,6 @@ printf:
 
 .print_done:
     call set_cursor
+
+    popa
     ret

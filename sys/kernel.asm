@@ -3,7 +3,7 @@
 
 section .data
 hello db "Hello world", 0
-
+kernel_load db "Kernel was loaded", 0
 
 
 section .text
@@ -50,6 +50,8 @@ print_hi:
     mov esi, hello
     call printf
 
+    mov esi, kernel_load
+    call printf
 
 
 
