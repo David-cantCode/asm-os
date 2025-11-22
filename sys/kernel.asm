@@ -1,9 +1,15 @@
 
 [BITS 32]
 
+section .data
+hello db "Hello world", 0
+
+
+
 section .text
 
-
+extern set_char
+extern printf
 global _start 
 
 
@@ -36,6 +42,17 @@ print_hi:
     mov al, 'I'
     mov ah, 0x07
     mov [edi], ax
+
+
+
+
+
+    mov esi, hello
+    call printf
+
+
+
+
 
     ret
 

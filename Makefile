@@ -16,6 +16,9 @@ FLAGS = -g -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
 
 
 OBJS = $(BUILD_DIR)/kernel.asm.o \
+       $(BUILD_DIR)/port.o \
+       $(BUILD_DIR)/vga.o \
+       $(BUILD_DIR)/memory.o
 
 	
 
@@ -41,7 +44,18 @@ $(BIN_DIR)/boot.bin: $(SYS_DIR)/boot.asm | $(BIN_DIR)
 $(BUILD_DIR)/kernel.asm.o: $(SYS_DIR)/kernel.asm | $(BUILD_DIR)
 	$(AS) -f elf32 -g $< -o $@
 
+#asm port
+$(BUILD_DIR)/port.o: $(SYS_DIR)/port.asm | $(BUILD_DIR)
+	$(AS) -f elf32 -g $< -o $@
 
+#asm vga
+$(BUILD_DIR)/vga.o: $(SYS_DIR)/vga.asm | $(BUILD_DIR)
+	$(AS) -f elf32 -g $< -o $@
+#asm memory
+$(BUILD_DIR)/memory.o: $(SYS_DIR)/memory.asm | $(BUILD_DIR)
+	$(AS) -f elf32 -g $< -o $@
+
+	
 # Link flat binary kernel using your linker.ld (script expects to produce binary)
 # Output: bin/kernel.bin (flat binary)
 $(BIN_DIR)/kernel.bin: $(OBJS) $(SYS_DIR)/linker.ld | $(BIN_DIR)

@@ -1,11 +1,13 @@
 
-section .text 
+
+
+section .data
 
 %define max_cols 45
 %define max_rows 80
 
 
-vga_addr dd 0xB8000
+vga_addr equ 0xB8000
 
 vga_index_reg  equ 0x3D4
 vga_data_reg   equ 0x3D5
@@ -15,17 +17,19 @@ vga_off_high   equ 0x0E
 
 color db 0x0f
 
-control_row db 0
+control_row dd 4
 
+section .text 
 
-control_line:
-    ;1 arg, row edi
+extern memcpy
+extern outb
+extern inb 
 
-    mov control_row, edi
 
 set_cursor:
     ;1 arg offset edi
 
+    pusha
 
     ;div offset 2
     shr edi, 1
@@ -51,63 +55,69 @@ set_cursor:
     mov al, bl ;low byte off
     call outb
 
+    popa
     ret
 
 
 
 get_cursor: 
-    ;ret offset eax
+    ; ret: eax (offset in bytes)
     
-    xor esi, esi
 
-    mov edi, vga_index_reg    
-    mov al, vga_off_high        
+    push edx
+    push ebx
+
+    ;get high byte
+    mov dx, vga_index_reg
+    mov al, vga_off_high
     call outb
 
-
-    push dword vga_data_reg
+    mov dx, vga_data_reg
     call inb
-    pop edx  
-    shl eax, 8 ;high byte
-    mov ebx, eax
+    mov ah, al         
 
-
-    mov edi, vga_index_reg
+    ;low byte
+    mov dx, vga_index_reg
     mov al, vga_off_low
     call outb
 
-
-    push dword vga_data_reg
+    mov dx, vga_data_reg
     call inb
-    pop edx  
-    add ebx, eax 
+    
 
-    shl ebx, 1 ;*2
-    mov eax, ebx   
+    and eax, 0xFFFF ;clear upper
+    shl eax, 1         
 
-
-
+    pop edx
+    pop ebx
+    ret
 
 get_offset:
     ;arg1 col edi
     ;arg2 row esi
-
+    pusha 
     mov eax, esi          
     imul eax, max_cols    
     add eax, edi          
     shl eax, 1           
+    popa
     ret
 
-
+global set_char
 set_char:
     ;arg1 offset edi
     ;arg2 char al
+
+    pusha 
 
     mov ebx, vga_addr
     add ebx, edi ;move to offset 
     mov [ebx], al ;char
     mov byte [ebx+1], 0x07; attr
 
+    popa
+
+    ret
 
 scroll_screen:
     ;arg1 mem_offset edi
@@ -145,8 +155,8 @@ scroll_screen:
   
     mov esi, edi               
     mov edi, ebp  
-    mov edx, ecx              
-    call memory_copy
+    mov edx, 4           
+    call memcpy
 
 
     ;clear last row
@@ -164,7 +174,7 @@ scroll_screen:
 
     mov al, ' '                 
     mov edi, eax                 
-    call set_char_at_video_memory
+    call set_char
 
     inc ecx
     jmp .clear_last
@@ -177,7 +187,8 @@ scroll_screen:
     ret
 
 
-print:
+global printf
+printf:
     ;arg1 str
     call get_cursor
     mov edi, eax 
@@ -186,3 +197,48 @@ print:
 
 .print_loop:
 
+    mov al, [esi + ecx]
+    cmp al, 0
+    je .print_done  
+
+
+    mov eax, edi
+    cmp eax, max_rows * max_cols * 2
+    jb .not_scroll
+
+
+    mov edi, eax
+    call scroll_screen
+    mov edi, eax
+
+
+.not_scroll:
+    cmp al, 10 ;'\n'
+    jne .print_char
+
+    mov eax, edi
+    mov ebx, 2 * max_cols
+    xor edx, edx
+    div ebx                  
+    inc eax                    
+    mov edi, 0               
+    mov esi, eax              
+    call get_offset           
+
+    mov edi, eax              
+    jmp .next_char
+
+
+
+.print_char:
+    call set_char
+    add edi, 2 ;mem_offset += 2
+
+
+.next_char:
+    inc ecx              
+    jmp .print_loop
+
+.print_done:
+    call set_cursor
+    ret
